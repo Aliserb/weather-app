@@ -1,26 +1,47 @@
-import { create } from "zustand";
-import { WeatherData } from "../utils/api";
+// src/store/useWeatherStore.ts
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { CityWeather, ForecastResponse } from '../utils/api';
 
-type State = {
-  favorites: WeatherData[];
-  searchResults: WeatherData | null;
-  addFavorite: (w: WeatherData) => void;
-  removeFavorite: (city: string) => void;
-  setSearchResults: (w: WeatherData | null) => void;
-};
+interface State {
+  favorites: CityWeather[];
+  searchResults: CityWeather | null;
+  forecastData: ForecastResponse | null;
 
-export const useWeatherStore = create<State>((set) => ({
-  favorites: [],
-  searchResults: null,
-  addFavorite: (weather) =>
-    set((state) => ({
-      favorites: state.favorites.find((w) => w.name === weather.name)
-        ? state.favorites
-        : [...state.favorites, weather],
-    })),
-  removeFavorite: (city) =>
-    set((state) => ({
-      favorites: state.favorites.filter((w) => w.name !== city),
-    })),
-  setSearchResults: (weather) => set({ searchResults: weather }),
-}));
+  addFavorite: (city: CityWeather) => void;
+  removeFavorite: (name: string) => void;
+  setSearchResults: (city: CityWeather | null) => void;
+  setForecastData: (data: ForecastResponse | null) => void;
+}
+
+export const useWeatherStore = create<State>()(
+  persist(
+    (set, get) => ({
+      favorites: [],
+      searchResults: null,
+      forecastData: null,
+
+      addFavorite: (city) =>
+        set((state) => ({
+          favorites: state.favorites.find((c) => c.name === city.name)
+            ? state.favorites
+            : [...state.favorites, city],
+        })),
+
+      removeFavorite: (name) =>
+        set((state) => ({
+          favorites: state.favorites.filter((c) => c.name !== name),
+        })),
+
+      setSearchResults: (city) => set({ searchResults: city }),
+
+      setForecastData: (data) => set({ forecastData: data }),
+    }),
+    {
+      name: 'weather-storage', // ключ в localStorage
+      partialize: (state) => ({
+        favorites: state.favorites,
+      }),
+    }
+  )
+);
