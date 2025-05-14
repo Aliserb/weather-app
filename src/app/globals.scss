@@ -1,0 +1,99 @@
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+.hourly-forecast {
+  -webkit-overflow-scrolling: touch;
+
+  &::-webkit-scrollbar {
+    height: 5px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #adb5bd;
+    border-radius: 10px;
+  }
+}
+
+.favorite-item-wrap {
+  cursor: pointer;
+
+  .city-name {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+
+    .country-flag {
+      width: 20px;
+      height: auto;
+    }
+  }
+
+  .current-temp {
+    gap: 0.5rem;
+
+    .temp-value {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .weather-icon {
+      width: 30px;
+      height: auto;
+    }
+  }
+
+  .coordinates {
+    white-space: nowrap;
+    margin-left: 1rem;
+  }
+}
+
+.list-group-item {
+  padding: 0.75rem 1rem;
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+}
