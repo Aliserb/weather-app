@@ -1,17 +1,39 @@
-// src/utils/api.ts
 import axios from 'axios';
 
 const API_KEY = process.env.NEXT_PUBLIC_OWM_API_KEY;
 const BASE_URL = 'https://api.openweathermap.org/data/2.5';
 
-//
-// Поиск города (API /find)
-//
+export interface ForecastResponse {
+  cod: string;
+  message: number;
+  cnt: number;
+  list: {
+    dt: number;
+    dt_txt: string;
+    main: {
+      temp: number;
+      temp_min: number;
+      temp_max: number;
+    };
+    weather: {
+      id: number;
+      main: string;
+      description: string;
+      icon: string;
+    }[];
+  }[];
+  city: {
+    name: string;
+    country: string;
+    coord: { lat: number; lon: number };
+  };
+}
+
 export interface CitySearchResponse {
-  message: string;     // "accurate"
-  cod: string;         // "200"
-  count: number;       // число найденных городов
-  list: CityWeather[]; // массив данных по городам
+  message: string;
+  cod: string;
+  count: number;
+  list: CityWeather[];
 }
 
 export interface CityWeather {
@@ -49,14 +71,17 @@ export async function searchCity(query: string): Promise<CitySearchResponse> {
       params: { q: query, appid: API_KEY, units: 'metric', lang: 'ru' },
     });
     return data;
-  } catch (err: any) {
-    throw new Error(err.response?.data?.message || err.message);
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      throw new Error(err.response?.data?.message || err.message);
+    }
+    if (err instanceof Error) {
+      throw new Error(err.message);
+    }
+    throw new Error('Unknown error occurred during city search');
   }
 }
 
-//
-// Прогноз One Call (API /onecall)
-//
 export interface OneCallResponse {
   lat: number;
   lon: number;
@@ -65,7 +90,6 @@ export interface OneCallResponse {
   current: Current;
   hourly: Hourly[];
   daily: Daily[];
-  // alerts?: Alert[]; // если нужны оповещения
 }
 
 export interface Current {
@@ -97,7 +121,7 @@ export interface Hourly {
   visibility: number;
   wind_speed: number;
   wind_deg: number;
-  pop: number;       // вероятность осадков
+  pop: number;
   weather: Weather[];
 }
 
@@ -134,10 +158,13 @@ export interface Daily {
   uvi: number;
 }
 
-export async function forecast(lat: number, lon: number) {
-  const { data } = await axios.get<OneCallResponse>(
-    'https://api.openweathermap.org/data/2.5/forecast',
-    { params: { lat, lon, units: 'metric', appid: API_KEY, lang: 'ru' } }
+export async function forecast(
+  lat: number,
+  lon: number
+): Promise<ForecastResponse> {
+  const { data } = await axios.get<ForecastResponse>(
+    `${BASE_URL}/forecast`,
+    { params: { lat, lon, units: "metric", appid: API_KEY, lang: "ru" } }
   );
   return data;
 }

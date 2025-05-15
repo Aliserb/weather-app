@@ -1,4 +1,3 @@
-// src/store/useWeatherStore.ts
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CityWeather, ForecastResponse } from '../utils/api';
@@ -16,7 +15,7 @@ interface State {
 
 export const useWeatherStore = create<State>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       favorites: [],
       searchResults: null,
       forecastData: null,
@@ -38,7 +37,7 @@ export const useWeatherStore = create<State>()(
       setForecastData: (data) => set({ forecastData: data }),
     }),
     {
-      name: 'weather-storage', // ключ в localStorage
+      name: 'weather-storage',
       partialize: (state) => ({
         favorites: state.favorites,
       }),

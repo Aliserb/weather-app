@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { searchCity, CityWeather, forecast } from "../utils/api";
 import { useWeatherStore } from "../store/useWeatherStore";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
@@ -24,19 +25,23 @@ export default function HomePage() {
       return;
     }
     setError(null);
-
+  
     try {
       const data = await searchCity(query);
       setResults(data.list);
-
+  
       if (data.list.length > 0) {
         setSearchResults(data.list[0]);
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e) {
+      if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError(String(e));
+      }
       setResults([]);
     }
-  };
+  };  
 
   const fetchForecast = async (lat: number, lon: number) => {
     const data = await forecast(lat, lon);
@@ -92,10 +97,12 @@ export default function HomePage() {
                   >
                     <div>
                       {item.name}, {item.sys.country}{" "}
-                      <img
+                      <Image
                         src={`https://openweathermap.org/images/flags/${item.sys.country.toLowerCase()}.png`}
                         alt={item.sys.country}
-                        style={{ width: 20, marginLeft: 4 }}
+                        width={20}
+                        height={14}
+                        style={{ marginLeft: 4 }}
                       />
                     </div>
 
@@ -103,7 +110,7 @@ export default function HomePage() {
                       <span className="me-2">
                         {Math.round(item.main.temp)}°C
                       </span>
-                      <img
+                      <Image
                         src={`https://openweathermap.org/img/wn/${item.weather[0].icon}.png`}
                         alt={item.weather[0].description}
                         width={30}

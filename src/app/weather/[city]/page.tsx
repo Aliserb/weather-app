@@ -1,29 +1,43 @@
-'use client';
+"use client";
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { forecast } from "@/utils/api";
-import { Container, Row, Col, Card, Spinner, Alert, Button } from "react-bootstrap";
+import { forecast, ForecastResponse } from '@/utils/api';
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Spinner,
+  Alert,
+  Button,
+} from "react-bootstrap";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import Link from "next/link";
 import { useWeatherStore } from "@/store/useWeatherStore";
+import Image from "next/image";
 
 export default function WeatherPage() {
-  const searchResults = useWeatherStore(s => s.searchResults);
+  const searchResults = useWeatherStore((s) => s.searchResults);
 
-  const favorites = useWeatherStore(s => s.favorites);
-  const addFavorite = useWeatherStore(s => s.addFavorite);
-  const removeFavorite = useWeatherStore(s => s.removeFavorite);
+  const favorites = useWeatherStore((s) => s.favorites);
+  const addFavorite = useWeatherStore((s) => s.addFavorite);
+  const removeFavorite = useWeatherStore((s) => s.removeFavorite);
   const isFavorite = Boolean(
-    searchResults && favorites.some(f => f.coord.lat === searchResults.coord.lat && f.coord.lon === searchResults.coord.lon)
+    searchResults &&
+      favorites.some(
+        (f) =>
+          f.coord.lat === searchResults.coord.lat &&
+          f.coord.lon === searchResults.coord.lon
+      )
   );
 
   const params = useSearchParams();
   const lat = params.get("lat");
   const lon = params.get("lon");
 
-  const [forecastData, setForecastData] = useState<any>(null);
+  const [forecastData, setForecastData] = useState<ForecastResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,8 +46,11 @@ export default function WeatherPage() {
       try {
         const data = await forecast(Number(lat), Number(lon));
         setForecastData(data);
+
+        console.log(data);
       } catch (err) {
         setError("Не удалось загрузить прогноз");
+        console.log(err);
       } finally {
         setLoading(false);
       }
@@ -41,22 +58,47 @@ export default function WeatherPage() {
     if (lat && lon) fetchData();
   }, [lat, lon]);
 
-  const groupByDay = () => {
+  type ForecastItem = ForecastResponse['list'][0];
+  
+  interface GroupedForecast {
+    date: string;
+    dayName: string;
+    items: ForecastItem[];
+    temp_max: number;
+    temp_min: number;
+  }
+
+  interface HourForecast {
+    dt: number;
+    dt_txt: string;
+    main: {
+      temp: number;
+    };
+    weather: Array<{
+      icon: string;
+      description: string;
+    }>;
+  }
+  
+  const groupByDay = (): GroupedForecast[] => {
     if (!forecastData) return [];
-    const grouped: Record<string, any[]> = {};
-    forecastData.list.forEach((item: any) => {
+  
+    const grouped: Record<string, ForecastItem[]> = {};
+  
+    forecastData.list.forEach((item) => {
       const date = item.dt_txt.split(" ")[0];
       grouped[date] = grouped[date] || [];
       grouped[date].push(item);
     });
+  
     return Object.entries(grouped).map(([date, items]) => ({
       date,
       dayName: format(parseISO(date), "EEEE", { locale: ru }),
       items,
-      temp_max: Math.round(Math.max(...items.map((i: any) => i.main.temp))),
-      temp_min: Math.round(Math.min(...items.map((i: any) => i.main.temp))),
+      temp_max: Math.round(Math.max(...items.map(i => i.main.temp))),
+      temp_min: Math.round(Math.min(...items.map(i => i.main.temp))),
     }));
-  };
+  };  
 
   const dailyForecasts = groupByDay();
 
@@ -75,24 +117,33 @@ export default function WeatherPage() {
     );
   }
 
+  if (!forecastData) {
+    return (
+      <Container className="py-5">
+        <Alert variant="warning">Данные прогноза не найдены.</Alert>
+      </Container>
+    );
+  }
+  
   return (
     <Container className="py-4">
-      <Link href="/">← Вернуться на главную</Link>
+      <Link href="/">Вернуться на главную</Link>
 
       <div className="forecast_header mb-4 d-flex align-items-center justify-content-center">
         <h2 className="text-center me-4">
           Прогноз для {forecastData.city.name}, {forecastData.city.country}
         </h2>
 
-        {/* 3) кнопка Избранного */}
         {searchResults && (
           <Button
             variant={isFavorite ? "danger" : "primary"}
             onClick={() => {
               if (!searchResults) return;
-              isFavorite
-                ? removeFavorite(searchResults.name)
-                : addFavorite(searchResults);
+              if (isFavorite) {
+                removeFavorite(searchResults.name);
+              } else {
+                addFavorite(searchResults);
+              }
             }}
           >
             {isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
@@ -124,10 +175,11 @@ export default function WeatherPage() {
                 </div>
 
                 <div className="mb-3">
-                  <img
+                  <Image
                     src={`https://openweathermap.org/img/wn/${day.items[0].weather[0].icon}@2x.png`}
                     alt={day.items[0].weather[0].description}
-                    style={{ width: "50px" }}
+                    width={50}
+                    height={50}
                   />
                   <div className="text-capitalize">
                     {day.items[0].weather[0].description}
@@ -135,7 +187,7 @@ export default function WeatherPage() {
                 </div>
 
                 <div className="hourly-forecast">
-                  {day.items.slice(0, 4).map((hour: any) => (
+                  {day.items.map((hour: HourForecast) => (
                     <div
                       key={hour.dt}
                       className="d-flex justify-content-between border-bottom py-2"
@@ -145,10 +197,11 @@ export default function WeatherPage() {
                         {Math.round(hour.main.temp)}°C
                       </span>
                       <span>
-                        <img
+                        <Image
                           src={`https://openweathermap.org/img/wn/${hour.weather[0].icon}.png`}
                           alt={hour.weather[0].description}
-                          style={{ width: "30px" }}
+                          width={30}
+                          height={30}
                         />
                       </span>
                     </div>

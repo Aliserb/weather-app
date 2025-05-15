@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "react-bootstrap";
 import { forecast } from "@/utils/api";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function HomePage() {
   const favorites = useWeatherStore((s) => s.favorites);
@@ -48,9 +49,11 @@ export default function HomePage() {
                     >
                       <div className="city-name">
                         {item.name}, {item.sys.country}{" "}
-                        <img
+                        <Image
                           src={`https://openweathermap.org/images/flags/${item.sys.country.toLowerCase()}.png`}
                           alt={item.sys.country}
+                          width={20}
+                          height={14}
                           className="country-flag"
                         />
                       </div>
@@ -59,10 +62,12 @@ export default function HomePage() {
                         <span className="temp-value">
                           {Math.round(item.main.temp)}°C
                         </span>
-                        <img
+                        <Image
                           src={`https://openweathermap.org/img/wn/${item.weather[0].icon}.png`}
                           alt={item.weather[0].description}
                           className="weather-icon"
+                          width={30}
+                          height={30}
                         />
                       </div>
 
